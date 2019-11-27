@@ -295,7 +295,7 @@ MonoBehaviour:
   StartHeight: 1
   StartHalfWidth: 0.2
   branchRangeMultier: 0.9
-  Branchings: 21
+  Branchings: 14
 --- !u!4 &1586038564
 Transform:
   m_ObjectHideFlags: 0

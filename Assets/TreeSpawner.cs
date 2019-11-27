@@ -93,7 +93,9 @@ public class TreeSpawner : MonoBehaviour
 
     private void Start()
     {
-        root = new Root(new Vector3(0, -5, 0), new Vector3(0, -3, 0), 90, branchRangeMultier, 0);
+        root = new Root(new Vector3(0, -2.5f, 0), new Vector3(0, -5, 0), 90, branchRangeMultier, 0);
+        roots.Add(root);
+        root.ActivateLineRoot();
         CreateTree();
     }
 
@@ -122,18 +124,20 @@ public class TreeSpawner : MonoBehaviour
         MeshFilter mf = GetComponent<MeshFilter>();
         mesh = new Mesh();
         mf.mesh = mesh;
-        Vector3[] vertices = new Vector3[2 + roots.Count * 2];  //   2^(branchings+2)
-        Vector2[] uvs = new Vector2[2 + roots.Count * 2];
-        int[] tri = new int[6 + 12 * roots.Count];              // 6*2^(branchings+1)-1
+        Vector3[] vertices = new Vector3[roots.Count * 2];  //   2^(branchings+2)
+        Vector2[] uvs = new Vector2[roots.Count * 2];
+        int[] tri = new int[12 * roots.Count];              // 6*2^(branchings+1)-1
+
         mesh.indexFormat = UnityEngine.Rendering.IndexFormat.UInt32;
-        System.Diagnostics.Stopwatch stopwatch = new System.Diagnostics.Stopwatch();
-        stopwatch.Start();
+
         Parallel.For(0, roots.Count, (int i) => {
             Vector3 pos = roots[i].pos;
             //pos.z = -roots[i].branchLevel*0.01f;
             float rotation = roots[i].rotation;
+
             vertices[roots[i].ID * 2] = pos + new Vector3(Mathf.Cos(Mathf.Deg2Rad * (rotation - 90)), Mathf.Sin(Mathf.Deg2Rad * (rotation - 90)), 0) * roots[i].width;
             vertices[roots[i].ID * 2 + 1] = pos + new Vector3(Mathf.Cos(Mathf.Deg2Rad * (rotation + 90)), Mathf.Sin(Mathf.Deg2Rad * (rotation + 90)), 0) * roots[i].width;
+
             float uvLever = (float)roots[i].branchLevel / (float)Branchings;
             uvs[roots[i].ID * 2] = new Vector2(0, uvLever);
             uvs[roots[i].ID * 2 + 1] = new Vector2(0, uvLever);
@@ -152,48 +156,7 @@ public class TreeSpawner : MonoBehaviour
                 }
             }
         });
-
-        //for (int i = 0; i < roots.Count; i++)
-        //{
-        //    Vector3 pos = roots[i].pos;
-        //    //pos.z = -roots[i].branchLevel*0.01f;
-        //    float rotation = roots[i].rotation;
-        //    vertices[roots[i].ID * 2] = pos + new Vector3(Mathf.Cos(Mathf.Deg2Rad * (rotation - 90)), Mathf.Sin(Mathf.Deg2Rad * (rotation - 90)), 0) * roots[i].width;
-        //    vertices[roots[i].ID * 2 + 1] = pos + new Vector3(Mathf.Cos(Mathf.Deg2Rad * (rotation + 90)), Mathf.Sin(Mathf.Deg2Rad * (rotation + 90)), 0) * roots[i].width;
-        //    float uvLever = (float)roots[i].branchLevel / (float)Branchings;
-        //    uvs[roots[i].ID * 2] = new Vector2(0, uvLever);
-        //    uvs[roots[i].ID * 2 + 1] = new Vector2(0, uvLever);
-
-        //    if (roots[i].root.Count > 0)
-        //    {
-        //        for (int first = 0; first < roots[i].root.Count; first++)
-        //        {
-        //            int index = first * 6;
-        //            tri[roots[i].ID * 12 + index] = roots[i].ID * 2;
-        //            tri[roots[i].ID * 12 + index + 1] = roots[i].ID * 2 + 1;
-        //            tri[roots[i].ID * 12 + index + 2] = roots[i].root[first].ID * 2 + 1;
-        //            tri[roots[i].ID * 12 + index + 3] = roots[i].ID * 2;
-        //            tri[roots[i].ID * 12 + index + 4] = roots[i].root[first].ID * 2 + 1;
-        //            tri[roots[i].ID * 12 + index + 5] = roots[i].root[first].ID * 2;
-        //        }
-        //    }
-        //}
-        int ind = roots.Count;
-        vertices[ind * 2] = new Vector3(StartHalfWidth, -6, 0);
-        vertices[ind * 2 + 1] = new Vector3(-StartHalfWidth, -6, 0);
-
-        uvs[ind * 2] = Vector2.zero;
-        uvs[ind * 2 + 1] = Vector2.zero;
-
-        tri[ind * 12] = ind * 2;
-        tri[ind * 12 + 1] = ind * 2 + 1;
-        tri[ind * 12 + 2] = 1;
-        tri[ind * 12 + 3] = ind * 2;
-        tri[ind * 12 + 4] = 1;
-        tri[ind * 12 + 5] = 0;
-
-        stopwatch.Stop();
-        Debug.Log(stopwatch.Elapsed);
+        
 
         mesh.vertices = vertices;
         mesh.triangles = tri;
