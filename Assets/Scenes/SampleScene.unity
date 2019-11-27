@@ -293,9 +293,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   StartHeight: 1
-  StartHalfWidth: 0.1
+  StartHalfWidth: 0.2
   branchRangeMultier: 0.9
-  Branchings: 16
+  Branchings: 21
 --- !u!4 &1586038564
 Transform:
   m_ObjectHideFlags: 0
