@@ -7,8 +7,8 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: New Material
-  m_Shader: {fileID: 4800000, guid: e8b2ad89501b09d42970ac8de0e2f8f1, type: 3}
+  m_Name: New Material 1
+  m_Shader: {fileID: 10752, guid: 0000000000000000f000000000000000, type: 0}
   m_ShaderKeywords: 
   m_LightmapFlags: 4
   m_EnableInstancingVariants: 0
@@ -40,9 +40,9 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _MainTex:
-        m_Texture: {fileID: 2800000, guid: 6b57884d2ff40a545b4e779d3d20556c, type: 3}
-        m_Scale: {x: 0, y: 21.94}
-        m_Offset: {x: 0, y: -20.5}
+        m_Texture: {fileID: 2800000, guid: 31ef542c62934df4aa857210de65e62c, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: -12.96}
     - _MetallicGlossMap:
         m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
@@ -58,13 +58,13 @@ Material:
     m_Floats:
     - _BumpScale: 1
     - _ColorMask: 15
-    - _Cutoff: 0.5
+    - _Cutoff: 0.63
     - _DetailNormalMapScale: 1
     - _DstBlend: 0
-    - _GlossMapScale: 1
-    - _Glossiness: 0.5
+    - _GlossMapScale: 0.641
+    - _Glossiness: 0.588
     - _GlossyReflections: 1
-    - _Metallic: 0
+    - _Metallic: 0.282
     - _Mode: 0
     - _OcclusionStrength: 1
     - _Parallax: 0.02
@@ -76,21 +76,11 @@ Material:
     - _StencilOp: 0
     - _StencilReadMask: 255
     - _StencilWriteMask: 255
+    - _Thickness: 1
     - _UVSec: 0
     - _UseUIAlphaClip: 0
     - _ZWrite: 1
-    - _b_influence: 0
-    - _branches_disp: 0
-    - _leaves_wiggle_disp: 1.35
-    - _leaves_wiggle_speed: 1.64
-    - _r_influence: 1
-    - _tree_sway_disp: 0.243
-    - _tree_sway_speed: 0.66
-    - _tree_sway_stutter: 0
-    - _tree_sway_stutter_influence: 0.342
-    - _wind_size: 20.3
     m_Colors:
-    - _Color: {r: 0.6509434, g: 0.6509434, b: 0.6509434, a: 1}
+    - _Color: {r: 1, g: 1, b: 1, a: 1}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
-    - _Tint: {r: 1, g: 1, b: 1, a: 1}
-    - _wind_dir: {r: 2, g: 0, b: 0, a: 0}
+    - _LineColor: {r: 1, g: 1, b: 1, a: 1}
