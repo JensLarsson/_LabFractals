@@ -60,6 +60,13 @@ class Root
             Mathf.Sin(Mathf.Deg2Rad * rotation) * length);
         root.Add(new Root(point, rotation, branchLenghtMul, branchLevel + 1, length, this));
     }
+    public void ActivateLineRoot(float customLenght)
+    {
+        Vector3 point = pos + new Vector3(
+            Mathf.Cos(Mathf.Deg2Rad * rotation) * customLenght,
+            Mathf.Sin(Mathf.Deg2Rad * rotation) * customLenght);
+        root.Add(new Root(point, rotation, branchLenghtMul, branchLevel + 1, length, this));
+    }
 
     public void Branch()
     {
@@ -238,7 +245,7 @@ public class TreeSpawner : MonoBehaviour
         {
             s = calulateL(rules[ModelChoice].rules, s);
         }
-        root = new Root(new Vector3(0, 0), 90, 1, 0, StartHeight);
+        root = new Root(new Vector3(0, 0), 90, 1, 0, UnityEngine.Random.Range(StartHeight * 0.9f, StartHeight * 1.1f));
         currentRoot = root;
         rules[ModelChoice].translation(s);
         Debug.Log(s);
@@ -269,7 +276,7 @@ public class TreeSpawner : MonoBehaviour
         for (int i = r.root.Count - 1; i >= 0; i--)
         {
             cleanupTree(r.root[i]);
-            if (r.root[i].lengthFromEnd < r.lengthFromEnd - cleanupFactor)
+            if (r.root[i].lengthFromEnd < r.lengthFromEnd - (int)UnityEngine.Random.Range(cleanupFactor - 10, cleanupFactor + 10))
             {
                 r.root.RemoveAt(i);
             }
@@ -314,11 +321,18 @@ public class TreeSpawner : MonoBehaviour
             }
             if (r.previous != null)
             {
-                r.branchStrenght = (float)(r.lengthFromEnd + r.previous.lengthFromEnd) / 2;
+                if (r.previous.previous != null)
+                {
+                    r.branchStrenght = (float)(r.lengthFromEnd + r.previous.lengthFromEnd + r.previous.previous.lengthFromEnd) / 3;
+                }
+                else
+                {
+                    r.branchStrenght = (float)(r.lengthFromEnd + r.root[0].lengthFromEnd + r.root[0].root[0].lengthFromEnd) / 3;
+                }
             }
             else
             {
-                r.branchStrenght = (float)(r.lengthFromEnd + r.root[0].lengthFromEnd) / 2;
+                r.branchStrenght = (float)(r.lengthFromEnd + r.root[0].lengthFromEnd + r.root[0].root[0].lengthFromEnd) / 3;
             }
         };
         TreeTravel(root);

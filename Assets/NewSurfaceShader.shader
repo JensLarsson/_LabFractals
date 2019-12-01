@@ -54,7 +54,7 @@ Shader "Tree Wind" {
 			   }
 			}
 			 void surf(Input IN, inout SurfaceOutput o) {
-				 fixed4 c = tex2D(_MainTex, IN.uv_MainTex);
+				 fixed4 c = tex2D(_MainTex, IN.uv_MainTex)*_Color;
 				 o.Albedo = _Color.rgb  * _Color.a;
 				 o.Emission = c.rgb.rgb;
 			 }
