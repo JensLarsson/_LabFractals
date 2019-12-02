@@ -14,6 +14,7 @@ Shader "Tree Wind" {
 
 	Properties{
 		_MainTex("Main Texture", 2D) = "white" {}
+		_UV("UV map", 2D) = "white" {}
 		_Color("Main Color", Color) = (1,1,1,1)
 
 	}
@@ -29,6 +30,7 @@ Shader "Tree Wind" {
 
 			fixed4 _Color;
 			sampler2D _MainTex;
+			sampler2D _UV;
 
 
 			struct Input {
@@ -45,17 +47,18 @@ Shader "Tree Wind" {
 				appdata o;
 				o.uv = float4(i.texcoord1.xy, 0, 0);
 			   float3 worldPos = mul(unity_ObjectToWorld, i.vertex).xyz;
-			   i.vertex.x += cos(_Time.z)*o.uv.y*0.1f;
-			   i.vertex.y += cos(_Time.z)*o.uv.y*0.05f;
+			   i.vertex *= 
+			   //i.vertex.x += cos(_Time.z*1.2)*o.uv.y*0.1f;
+			   //i.vertex.y += sin(_Time.z*1.9)*o.uv.y*0.07f;
 			   // i.normal = o.uv;
 			   if (o.uv.y > .95f) {
-				   i.vertex.x += cos(_Time.z * 10 + worldPos.x + worldPos.y)*o.uv.y*0.005f;
-				   i.vertex.y += cos(_Time.z * 10 + worldPos.x + worldPos.y)*o.uv.y*0.005f;
+				   i.vertex.x += cos(_Time.z * 10 + worldPos.x + worldPos.y)*o.uv.y*0.05f;
+				   i.vertex.y += cos(_Time.z * 6 + worldPos.x + worldPos.y)*o.uv.y*0.008f;
 			   }
 			}
 			 void surf(Input IN, inout SurfaceOutput o) {
 				 fixed4 c = tex2D(_MainTex, IN.uv_MainTex);
-				 o.Albedo = _Color.rgb  * _Color.a;
+				 o.Albedo = _Color.rgb  * _Color.a;	
 				 o.Emission = c.rgb.rgb;
 			 }
 	 ENDCG

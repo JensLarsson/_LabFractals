@@ -97,6 +97,7 @@ public class TreeSpawner : MonoBehaviour
         get { return (int)modelChoice; }
     }
     public float StartHeight = 1.0f;
+    float branchLength;
     //[Range(0.01f, 1.0f)] public float branchRangeMultier = 0.8f;
     public float branchWidth = 0.5f;
     public float rotationOffset = 0;
@@ -115,6 +116,7 @@ public class TreeSpawner : MonoBehaviour
     Stack<Root> rootStates = new Stack<Root>();
     Stack<float> rotationStates = new Stack<float>();
     Root currentRoot;
+    string endString;
 
     //Start yo
     private void Start()
@@ -233,15 +235,30 @@ public class TreeSpawner : MonoBehaviour
             }
         };
 
-        string s = rules[ModelChoice].startString;
+        endString = rules[ModelChoice].startString;
         for (int i = 0; i < Branchings; i++)
         {
-            s = calulateL(rules[ModelChoice].rules, s);
+            endString = calulateL(rules[ModelChoice].rules, endString);
         }
-        root = new Root(new Vector3(0, 0), 90, 1, 0, StartHeight);
+        makeNewTree();
+    }
+    private void Update()
+    {
+        if (Input.GetKeyDown(KeyCode.Space))
+        {
+            makeNewTree();
+        }
+    }
+    void makeNewTree()
+    {
+        branchLength = StartHeight;
+        rootCount = 0;
+        rootStates = new Stack<Root>();
+        rotationStates = new Stack<float>();
+        roots = new List<Root>();
+        root = new Root(new Vector3(0, 0), 90, 1, 0, branchLength);
         currentRoot = root;
-        rules[ModelChoice].translation(s);
-        Debug.Log(s);
+        rules[ModelChoice].translation(endString);
         CreateTree();
     }
 
@@ -278,7 +295,7 @@ public class TreeSpawner : MonoBehaviour
 
     string calulateL(List<Rule> rules, string s)
     {
-        StartHeight *= 0.5f;
+        branchLength *= 0.5f;
         string returnString = "";
         foreach (char c in s)
         {
