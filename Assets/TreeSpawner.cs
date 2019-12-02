@@ -339,8 +339,6 @@ public class TreeSpawner : MonoBehaviour
             }
         };
         TreeTravel(root);
-
-
         MeshFilter mf = GetComponent<MeshFilter>();
         mesh = new Mesh();
         mf.mesh = mesh;
@@ -359,13 +357,15 @@ public class TreeSpawner : MonoBehaviour
             uvs[roots[i].ID * 2] = new Vector2(0, 1.0f - uvLever);
             uvs[roots[i].ID * 2 + 1] = new Vector2(0, 1.0f - uvLever);
 
+            int depth = roots[i].lengthFromEnd == 0 ? 1 : 0;
+
             vertices[roots[i].ID * 2] = pos + new
             Vector3(Mathf.Cos(Mathf.Deg2Rad * (rotation - 90)),
-            Mathf.Sin(Mathf.Deg2Rad * (rotation - 90)), uvLever * 0.1f) * (uvLever + 0.02f) * branchWidth;
+            Mathf.Sin(Mathf.Deg2Rad * (rotation - 90)), -depth) * (uvLever + 0.02f) * branchWidth;
 
             vertices[roots[i].ID * 2 + 1] = pos + new
             Vector3(Mathf.Cos(Mathf.Deg2Rad * (rotation + 90)),
-            Mathf.Sin(Mathf.Deg2Rad * (rotation + 90)), uvLever * 0.1f) * (uvLever + 0.02f) * branchWidth;
+            Mathf.Sin(Mathf.Deg2Rad * (rotation + 90)), -depth) * (uvLever + 0.02f) * branchWidth;
 
             float branchStrenght = 1 - (float)roots[i].branchStrenght / (float)maxDepth;
             uvs2[roots[i].ID * 2] = new Vector2(0, branchStrenght);
@@ -388,8 +388,8 @@ public class TreeSpawner : MonoBehaviour
         Debug.Log(tri.Count());
         mesh.vertices = vertices;
         mesh.triangles = tri;
-        mesh.uv = uvs;
-        mesh.uv2 = uvs2;
+        mesh.uv = uvs; //UV1 is used for texture mapping
+        mesh.uv2 = uvs2; //UV2 maps branch strenght for wind physics
     }
 
 }
