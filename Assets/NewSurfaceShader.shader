@@ -15,6 +15,7 @@ Shader "Tree Wind" {
 	Properties{
 		_MainTex("Main Texture", 2D) = "white" {}
 		_Color("Main Color", Color) = (1,1,1,1)
+		_Age("Age", Range (0,1)) = 0
 
 	}
 
@@ -29,6 +30,7 @@ Shader "Tree Wind" {
 
 			fixed4 _Color;
 			sampler2D _MainTex;
+			float _Age;
 
 
 			struct Input {
@@ -45,8 +47,8 @@ Shader "Tree Wind" {
 				appdata o;
 				o.uv = float4(i.texcoord1.xy, 0, 0);
 			   float3 worldPos = mul(unity_ObjectToWorld, i.vertex).xyz;
-			   i.vertex.x += cos(_Time.z)*o.uv.y*0.1f;
-			   i.vertex.y += cos(_Time.z)*o.uv.y*0.05f;
+			   i.vertex.x *= _Age;//cos(_Time.z)*o.uv.y*0.1f;
+			   i.vertex.y *= _Age;//cos(_Time.z)*o.uv.y*0.05f;
 			   // i.normal = o.uv;
 			   if (o.uv.y > .95f) {
 				   i.vertex.x += cos(_Time.z * 10 + worldPos.x + worldPos.y)*o.uv.y*0.005f;
