@@ -103,9 +103,13 @@ public class TreeSpawner : MonoBehaviour
     public float rotationOffset = 0;
     public int Branchings = 1;
     public int cleanupFactor = 60;
+    public int edgeCutt = 6;
 
     public static float minRot = 9.0f;
     public static float maxRot = 30.0f;
+
+    List<Vector3> leavePositions = new List<Vector3>();
+    //public GameObject gObject;
 
     int rootCount = 0;
     List<Root> roots = new List<Root>();
@@ -286,7 +290,7 @@ public class TreeSpawner : MonoBehaviour
         for (int i = r.root.Count - 1; i >= 0; i--)
         {
             cleanupTree(r.root[i]);
-            if (r.root[i].lengthFromEnd < r.lengthFromEnd - cleanupFactor)
+            if (r.root[i].lengthFromEnd < r.lengthFromEnd - cleanupFactor || r.root[i].lengthFromEnd < edgeCutt)
             {
                 r.root.RemoveAt(i);
             }
@@ -350,6 +354,10 @@ public class TreeSpawner : MonoBehaviour
         mesh.indexFormat = UnityEngine.Rendering.IndexFormat.UInt32;
         Parallel.For(0, roots.Count, (int i) =>
         {
+            //if (roots[i].lengthFromEnd == edgeCutt)
+            //{
+            //    leavePositions.Add(roots[i].pos);
+            //}
             Vector3 pos = roots[i].pos;
             float rotation = roots[i].rotation + rotationOffset;
 
@@ -383,9 +391,16 @@ public class TreeSpawner : MonoBehaviour
                 tri[roots[i].ID * maxBranches + index + 5] = roots[i].root[first].ID * 2;
             }
         });
-        Debug.Log(tri.Count());
+        //foreach (Vector3 pos in leavePositions)
+        //{
+        //    Vector3 p = pos;
+        //    p.z = transform.position.z;
+        //    GameObject g = Instantiate(gObject);
+        //    g.transform.position = p;
+        //    g.transform.Rotate(new Vector3(0, 0, UnityEngine.Random.Range(0, 360)));
+        //}
+        Debug.Log(vertices.Count());
         tri = tri.Where(x => x > -1).ToArray();
-        Debug.Log(tri.Count());
         mesh.vertices = vertices;
         mesh.triangles = tri;
         mesh.uv = uvs; //UV1 is used for texture mapping

@@ -58,12 +58,12 @@ Shader "Tree Wind" {
 				//i.vertex.x *= clamp(_Time.z*(1.01-o.uv.y), 0, 1);
 				//i.vertex.y *= clamp(_Time.z*(1.01-o.uv.y), 0, 1);
 
-				//i.vertex.x += cos(_Time.z*1.2)*o.uv2.y*0.1f;
-				//i.vertex.y += sin(_Time.z*1.9)*o.uv2.y*0.07f;
+				i.vertex.x += cos(_Time.z*1.2)*o.uv2.y*0.1f;
+				i.vertex.y += sin(_Time.z*1.9)*o.uv2.y*0.05f;
 				// i.normal = o.uv;
 				if (o.uv2.y > .95f) {
-				   i.vertex.x += cos(_Time.z * 10 + worldPos.x + worldPos.y)*o.uv2.y*0.05f;
-				   i.vertex.y += cos(_Time.z * 6 + worldPos.x + worldPos.y)*o.uv2.y*0.008f;
+				   i.vertex.x += cos(_Time.z * 10 + worldPos.x + worldPos.y)*o.uv2.y*0.01f;
+				   i.vertex.y += cos(_Time.z * 6 + worldPos.x + worldPos.y)*o.uv2.y*0.005f;
 				}
 			}
 			 void surf(Input IN, inout SurfaceOutput o) {
