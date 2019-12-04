@@ -56,8 +56,8 @@ class Root
     public void ActivateLineRoot()
     {
         Vector3 point = pos + new Vector3(
-            Mathf.Cos(Mathf.Deg2Rad * rotation) * length,
-            Mathf.Sin(Mathf.Deg2Rad * rotation) * length);
+            Mathf.Cos(Mathf.Deg2Rad * rotation) * length * UnityEngine.Random.Range(0.8f, 1.2f),
+            Mathf.Sin(Mathf.Deg2Rad * rotation) * length * UnityEngine.Random.Range(0.8f, 1.2f));
         root.Add(new Root(point, rotation, branchLenghtMul, branchLevel + 1, length, this));
     }
 
@@ -104,11 +104,11 @@ public class TreeSpawner : MonoBehaviour
     public int Branchings = 1;
     public int cleanupFactor = 60;
     public int edgeCutt = 6;
+    public float leafSize = 1.0f;
 
     public static float minRot = 9.0f;
     public static float maxRot = 30.0f;
 
-    List<Vector3> leavePositions = new List<Vector3>();
     //public GameObject gObject;
 
     int rootCount = 0;
@@ -323,11 +323,16 @@ public class TreeSpawner : MonoBehaviour
         cleanupTree(root);
         int maxBranches = 0;
         Action<Root> TreeTravel = null;
+        List<Vector3> leavePositions = new List<Vector3>();
         TreeTravel = (r) =>
         {
             roots.Add(r);
             r.ID = rootCount;
             rootCount++;
+            if (r.lengthFromEnd == edgeCutt)
+            {
+                leavePositions.Add(r.pos);
+            }
             maxBranches = maxBranches < r.root.Count ? r.root.Count : maxBranches;
             foreach (Root ro in r.root)
             {
@@ -346,18 +351,17 @@ public class TreeSpawner : MonoBehaviour
         MeshFilter mf = GetComponent<MeshFilter>();
         mesh = new Mesh();
         mf.mesh = mesh;
-        Vector3[] vertices = new Vector3[roots.Count * 2];  //   2^(branchings+2)
-        Vector2[] uvs = new Vector2[roots.Count * 2];
-        Vector2[] uvs2 = new Vector2[roots.Count * 2];
+        Vector3[] vertices = new Vector3[roots.Count * 2 + leavePositions.Count * 4];  //   2^(branchings+2)
+        Vector2[] uvs = new Vector2[roots.Count * 2 + leavePositions.Count * 4];    //UV1 is used for texture mapping
+        Vector2[] uvs2 = new Vector2[roots.Count * 2 + leavePositions.Count * 4];   //UV2 maps branch strenght for wind physics
+        Vector2[] uvs3 = new Vector2[roots.Count * 2 + leavePositions.Count * 4];   //UV3 maps leave textures
+
+
         maxBranches *= 6;
-        int[] tri = Enumerable.Repeat(-1, maxBranches * roots.Count).ToArray();
+        int[] tri = Enumerable.Repeat(-1, maxBranches * roots.Count + leavePositions.Count * 6).ToArray();
         mesh.indexFormat = UnityEngine.Rendering.IndexFormat.UInt32;
         Parallel.For(0, roots.Count, (int i) =>
         {
-            //if (roots[i].lengthFromEnd == edgeCutt)
-            //{
-            //    leavePositions.Add(roots[i].pos);
-            //}
             Vector3 pos = roots[i].pos;
             float rotation = roots[i].rotation + rotationOffset;
 
@@ -379,6 +383,9 @@ public class TreeSpawner : MonoBehaviour
             uvs2[roots[i].ID * 2] = new Vector2(0, branchStrenght);
             uvs2[roots[i].ID * 2 + 1] = new Vector2(0, branchStrenght);
 
+            uvs3[roots[i].ID * 2 + 1] = new Vector2(0, 0);
+            uvs3[roots[i].ID * 2 + 1] = new Vector2(0, 0);
+
             for (int first = 0; first < roots[i].root.Count; first++)
             {
                 int index = first * 6;
@@ -390,6 +397,33 @@ public class TreeSpawner : MonoBehaviour
                 tri[roots[i].ID * maxBranches + index + 4] = roots[i].root[first].ID * 2 + 1;
                 tri[roots[i].ID * maxBranches + index + 5] = roots[i].root[first].ID * 2;
             }
+        });
+        float strength = 1 - (float)edgeCutt / (float)maxDepth;
+        Parallel.For(0, leavePositions.Count, (int i) =>
+        {
+            vertices[roots.Count * 2 + i * 4] = leavePositions[i] + new Vector3(leafSize * 0.5f, -leafSize * 0.5f, 0);
+            vertices[roots.Count * 2 + i * 4 + 1] = leavePositions[i] + new Vector3(-leafSize * 0.5f, -leafSize * 0.5f, 0);
+            vertices[roots.Count * 2 + i * 4 + 2] = leavePositions[i] + new Vector3(-leafSize * 0.5f, leafSize * 0.5f, 0);
+            vertices[roots.Count * 2 + i * 4 + 3] = leavePositions[i] + new Vector3(leafSize * 0.5f, leafSize * 0.5f, 0);
+
+            uvs2[roots.Count * 2 + i * 4] = new Vector2(strength, strength);
+            uvs2[roots.Count * 2 + i * 4 + 1] = new Vector2(strength, strength);
+            uvs2[roots.Count * 2 + i * 4 + 2] = new Vector2(strength, strength);
+            uvs2[roots.Count * 2 + i * 4 + 3] = new Vector2(strength, strength);
+
+            uvs3[roots.Count * 2 + i * 4] = new Vector2(1, 0);
+            uvs3[roots.Count * 2 + i * 4 + 1] = new Vector2(0, 0);
+            uvs3[roots.Count * 2 + i * 4 + 2] = new Vector2(0, 1);
+            uvs3[roots.Count * 2 + i * 4 + 3] = new Vector2(1, 1);
+
+
+            tri[roots.Count * 6 + i * 6] = roots.Count * 2 + i * 4;
+            tri[roots.Count * 6 + i * 6 + 1] = roots.Count * 2 + i * 4 + 1;
+            tri[roots.Count * 6 + i * 6 + 2] = roots.Count * 2 + i * 4 + 2;
+
+            tri[roots.Count * 6 + i * 6 + 3] = roots.Count * 2 + i * 4;
+            tri[roots.Count * 6 + i * 6 + 4] = roots.Count * 2 + i * 4 + 2;
+            tri[roots.Count * 6 + i * 6 + 5] = roots.Count * 2 + i * 4 + 3;
         });
         //foreach (Vector3 pos in leavePositions)
         //{
@@ -403,8 +437,10 @@ public class TreeSpawner : MonoBehaviour
         tri = tri.Where(x => x > -1).ToArray();
         mesh.vertices = vertices;
         mesh.triangles = tri;
-        mesh.uv = uvs; //UV1 is used for texture mapping
-        mesh.uv2 = uvs2; //UV2 maps branch strenght for wind physics
+        mesh.uv = uvs;      //UV1 is used for texture mapping
+        mesh.uv2 = uvs2;    //UV2 maps branch strenght for wind physics
+        mesh.uv3 = uvs3;    //UV3 maps leave textures
+
     }
 
 }
