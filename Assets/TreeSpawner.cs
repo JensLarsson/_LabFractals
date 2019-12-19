@@ -60,6 +60,8 @@ class Root
         Vector3 rightV = position + new Vector3(
             Mathf.Cos(Mathf.Deg2Rad * rightRot) * length,
             Mathf.Sin(Mathf.Deg2Rad * rightRot) * length);
+
+
         root.Add(new Root(leftV, leftRot, branchLenghtMul, branchLevel + 1, length, this));
         root.Add(new Root(rightV, rightRot, branchLenghtMul, branchLevel + 1, length, this));
     }
@@ -218,6 +220,24 @@ public class TreeSpawner : MonoBehaviour
         maxBranches *= 9;
         int[] tri = Enumerable.Repeat(-1, maxBranches * roots.Count + leavePositions.Count * 6).ToArray();
         mesh.indexFormat = UnityEngine.Rendering.IndexFormat.UInt32;
+
+        TreeTravel = (r) =>
+        {
+            if (r.root.Count() == 2)
+            {
+                if (r.root[0].rotation > r.root[1].rotation)
+                {
+                    Root temp = r.root[0];
+                    r.root[0] = r.root[1];
+                    r.root[1] = temp;
+                }
+                TreeTravel(r.root[0]);
+                TreeTravel(r.root[1]);
+            }
+
+        };
+        TreeTravel(root.root[0]);
+
         Parallel.For(0, roots.Count, (int i) =>
         {
             Vector3 pos = roots[i].position;
@@ -240,7 +260,7 @@ public class TreeSpawner : MonoBehaviour
 
             vertices[roots[i].ID * 3 + 2] = pos + new
             Vector3(Mathf.Cos(Mathf.Deg2Rad * rotation),
-            Mathf.Sin(Mathf.Deg2Rad * rotation), -depth) * (uvLever + 0.02f) * branchWidth;
+            Mathf.Sin(Mathf.Deg2Rad * rotation ), -depth) * (uvLever + 0.02f) * branchWidth * 2;
 
             float branchStrenght = 1 - (float)roots[i].branchStrenght / (float)maxDepth;
             if (roots[i].branchStrenght == 0) branchStrenght = 0;
@@ -321,6 +341,14 @@ public class TreeSpawner : MonoBehaviour
         mesh.uv3 = uvs3;    //UV3 maps leave textures
 
     }
+    //private void OnDrawGizmos()
+    //{
+    //    Gizmos.color = Color.yellow;
+    //    for (int i = 0; i < roots.Count; i++)
+    //    {
+    //        Gizmos.DrawSphere(roots[i].position, 0.1f);
+    //    }
+    //}
 
 }
 
