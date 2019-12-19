@@ -7,7 +7,7 @@ using System.Linq;
 
 class Root
 {
-    public Vector3 pos;
+    public Vector3 position;
     public List<Root> root = new List<Root>();
     public Root previous;
     public int ID = -1;
@@ -18,35 +18,46 @@ class Root
     public int branchLevel = -1;
     public float branchStrenght = -1;
     public int lengthFromEnd;
+    public bool flipOverride = false;
 
 
-    public Root(Vector3 end, float rot, float branchMul, int i, float lenght, Root previous = null)
+    public Root(Vector3 pos, float rot, float branchMul, int i, float lenght, Root previous = null)
     {
-        pos = end;
+        this.position = pos;
         rotation = rot;
         branchLenghtMul = branchMul;
         branchLevel = i;
-        this.length = lenght;
+        this.length = lenght * branchLenghtMul;
         width = length * 0.1f;
         this.previous = previous;
     }
     public float GetEdgeRotation()
     {
         if (previous == null) return rotation;
-        float rot = Vector2.SignedAngle(previous.pos, pos);
+        float rot = Vector2.SignedAngle(previous.position, position);
 
         return rot;
     }
 
 
-    public void ActivateTreeRoot()
+    public void ActivateTreeRoot(bool flip, float leftRotation = 0, float rightRotation = 0, bool flipBool = false)
     {
-        float leftRot = rotation + UnityEngine.Random.Range(TreeSpawner.minRot, TreeSpawner.maxRot);
-        float rightRot = rotation - UnityEngine.Random.Range(TreeSpawner.minRot, TreeSpawner.maxRot);
-        Vector3 leftV = pos + new Vector3(
+        float leftRot = 0;
+        float rightRot = 0;
+        if (flipBool && !flipOverride)
+        {
+            leftRot = flip ? rotation - leftRotation : rotation + rightRotation;
+            rightRot = flip ? rotation - rightRotation : rotation + leftRotation;
+        }
+        else
+        {
+            leftRot = rotation - leftRotation;
+            rightRot = rotation + rightRotation;
+        }
+        Vector3 leftV = position + new Vector3(
             Mathf.Cos(Mathf.Deg2Rad * leftRot) * length,
             Mathf.Sin(Mathf.Deg2Rad * leftRot) * length);
-        Vector3 rightV = pos + new Vector3(
+        Vector3 rightV = position + new Vector3(
             Mathf.Cos(Mathf.Deg2Rad * rightRot) * length,
             Mathf.Sin(Mathf.Deg2Rad * rightRot) * length);
         root.Add(new Root(leftV, leftRot, branchLenghtMul, branchLevel + 1, length, this));
@@ -55,195 +66,59 @@ class Root
 
     public void ActivateLineRoot()
     {
-        Vector3 point = pos + new Vector3(
-            Mathf.Cos(Mathf.Deg2Rad * rotation) * length * UnityEngine.Random.Range(0.8f, 1.2f),
-            Mathf.Sin(Mathf.Deg2Rad * rotation) * length * UnityEngine.Random.Range(0.8f, 1.2f));
+        Vector3 point = position + new Vector3(
+            Mathf.Cos(Mathf.Deg2Rad * rotation) * length * 1,
+            Mathf.Sin(Mathf.Deg2Rad * rotation) * length * 1);
         root.Add(new Root(point, rotation, branchLenghtMul, branchLevel + 1, length, this));
     }
 
-    public void Branch()
+    public void Branch(bool flip, float left = 0, float right = 0, bool flipbool = false)
     {
+        if (flipbool)
+        {
+            flip = !flip;
+        }
         if (root.Count == 0)
         {
-            ActivateTreeRoot();
+            ActivateTreeRoot(flip, left, right, flipbool);
         }
         else
         {
             foreach (Root r in root)
             {
-                r.Branch();
+                r.Branch(flip, left, right, flipbool);
             }
         }
     }
 }
 
-struct Rule
-{
-    public char rule;
-    public string result;
-}
-struct RuleContainer
-{
-    public string startString;
-    public List<Rule> rules;
-    public Action<string> translation;
-}
 public class TreeSpawner : MonoBehaviour
 {
-    public enum Models { fractalTree = 0, LsystemTree, plant }
-    public Models modelChoice = Models.LsystemTree;
-    int ModelChoice
-    {
-        get { return (int)modelChoice; }
-    }
+    public bool flipBranches = false;
     public float StartHeight = 1.0f;
-    float branchLength;
+    float height;
+    public float heightMultiplier = 1.0f;
+    public float leftRotation = 30.0f;
+    public float rightRotation = 30.0f;
     //[Range(0.01f, 1.0f)] public float branchRangeMultier = 0.8f;
     public float branchWidth = 0.5f;
-    public float rotationOffset = 0;
     public int Branchings = 1;
-    public int cleanupFactor = 60;
-    public int edgeCutt = 6;
+    //public int cleanupFactor = 60;
+    //public int edgeCutt = 6;
     public float leafSize = 1.0f;
 
-    public static float minRot = 9.0f;
-    public static float maxRot = 30.0f;
 
     //public GameObject gObject;
 
     int rootCount = 0;
     List<Root> roots = new List<Root>();
-    RuleContainer[] rules = new RuleContainer[1];
     Mesh mesh;
     Root root;
-
-    Stack<Root> rootStates = new Stack<Root>();
-    Stack<float> rotationStates = new Stack<float>();
-    Root currentRoot;
     string endString;
 
     //Start yo
     private void Start()
     {
-        rules = new RuleContainer[Enum.GetNames(typeof(Models)).Length];
-        rules[(int)Models.fractalTree] = new RuleContainer()
-        {
-            startString = "0",
-            rules = new List<Rule>()
-            {
-                new Rule(){ rule ='1', result ="11"},
-                new Rule(){ rule ='0', result ="1[0]0"},
-            },
-            translation = (str) =>
-            {
-                foreach (char c in str)
-                {
-                    switch (c)
-                    {
-                        case '0':
-                            currentRoot.ActivateLineRoot();
-                            break;
-
-                        case '1':
-                            currentRoot.ActivateLineRoot();
-                            currentRoot = currentRoot.root[currentRoot.root.Count - 1];
-                            break;
-                        case '[':
-                            rootStates.Push(currentRoot);
-                            rotationStates.Push(currentRoot.rotation);
-                            currentRoot.rotation -= 45;
-                            break;
-                        case ']':
-                            currentRoot = rootStates.Pop();
-                            currentRoot.rotation = rotationStates.Pop();
-                            currentRoot.rotation += 45;
-                            break;
-                    }
-                }
-            }
-        };
-        rules[(int)Models.plant] = new RuleContainer()
-        {
-            startString = "X",
-            rules = new List<Rule>()
-            {
-                new Rule(){ rule ='X', result ="F+[[X]-X]-F[-FX]+X"},
-                new Rule(){ rule ='F', result ="FF"},
-            },
-            translation = (str) =>
-            {
-                foreach (char c in str)
-                {
-                    switch (c)
-                    {
-                        case 'F':
-                            currentRoot.ActivateLineRoot();
-                            currentRoot = currentRoot.root[currentRoot.root.Count - 1];
-                            break;
-
-                        case '-':
-                            currentRoot.rotation -= 25;
-                            break;
-
-                        case '+':
-                            currentRoot.rotation += 25;
-                            break;
-
-                        case '[':
-                            rootStates.Push(currentRoot);
-                            rotationStates.Push(currentRoot.rotation);
-                            break;
-                        case ']':
-                            currentRoot = rootStates.Pop();
-                            currentRoot.rotation = rotationStates.Pop();
-                            break;
-                    }
-                }
-            }
-        };
-        rules[(int)Models.LsystemTree] = new RuleContainer()
-        {
-            startString = "F",
-            rules = new List<Rule>()
-            {
-                new Rule(){
-            rule = 'F',
-            result = "FF+[+F-F-F]-[-F+F+F]"}
-            },
-            translation = (str) =>
-            {
-                foreach (char c in str)
-                {
-                    switch (c)
-                    {
-                        case 'F':
-                            currentRoot.ActivateLineRoot();
-                            currentRoot = currentRoot.root[currentRoot.root.Count - 1];
-                            break;
-                        case '+':
-                            currentRoot.rotation += UnityEngine.Random.Range(23.5f, 26.5f);
-                            break;
-                        case '-':
-                            currentRoot.rotation -= UnityEngine.Random.Range(23.5f, 26.5f);
-                            break;
-                        case '[':
-                            rootStates.Push(currentRoot);
-                            rotationStates.Push(currentRoot.rotation);
-                            break;
-                        case ']':
-                            currentRoot = rootStates.Pop();
-                            currentRoot.rotation = rotationStates.Pop();
-                            break;
-                    }
-                }
-            }
-        };
-
-        endString = rules[ModelChoice].startString;
-        for (int i = 0; i < Branchings; i++)
-        {
-            endString = calulateL(rules[ModelChoice].rules, endString);
-        }
         makeNewTree();
     }
     private void Update()
@@ -255,14 +130,17 @@ public class TreeSpawner : MonoBehaviour
     }
     void makeNewTree()
     {
-        branchLength = StartHeight;
+        height = StartHeight;
         rootCount = 0;
-        rootStates = new Stack<Root>();
-        rotationStates = new Stack<float>();
         roots = new List<Root>();
-        root = new Root(new Vector3(0, 0), 90, 1, 0, branchLength);
-        currentRoot = root;
-        rules[ModelChoice].translation(endString);
+        root = new Root(new Vector3(0, 0), 90, heightMultiplier, 0, height);
+        root.ActivateLineRoot();
+        root.root[0].flipOverride = true;
+        for (int i = 0; i < Branchings; i++)
+        {
+            root.Branch(false, leftRotation, rightRotation, flipBranches);
+        }
+
         CreateTree();
     }
 
@@ -285,42 +163,22 @@ public class TreeSpawner : MonoBehaviour
         return r.lengthFromEnd;
     }
 
-    void cleanupTree(Root r)
-    {
-        for (int i = r.root.Count - 1; i >= 0; i--)
-        {
-            cleanupTree(r.root[i]);
-            if (r.root[i].lengthFromEnd < r.lengthFromEnd - cleanupFactor || r.root[i].lengthFromEnd < edgeCutt)
-            {
-                r.root.RemoveAt(i);
-            }
-        }
-    }
-
-    string calulateL(List<Rule> rules, string s)
-    {
-        branchLength *= 0.5f;
-        string returnString = "";
-        foreach (char c in s)
-        {
-            foreach (Rule rule in rules)
-            {
-                if (rule.rule == c)
-                {
-                    returnString += rule.result;
-                    goto DoubleBreak;
-                }
-            }
-            returnString += c;
-        DoubleBreak:;
-        }
-        return returnString;
-    }
+    //void cleanupTree(Root r)
+    //{
+    //    for (int i = r.root.Count - 1; i >= 0; i--)
+    //    {
+    //        cleanupTree(r.root[i]);
+    //        if (r.root[i].lengthFromEnd < r.lengthFromEnd - cleanupFactor || r.root[i].lengthFromEnd < edgeCutt)
+    //        {
+    //            r.root.RemoveAt(i);
+    //        }
+    //    }
+    //}
 
     private void CreateTree()
     {
         int maxDepth = getDepth(root);
-        cleanupTree(root);
+        //cleanupTree(root);
         int maxBranches = 0;
         Action<Root> TreeTravel = null;
         List<Vector3> leavePositions = new List<Vector3>();
@@ -329,9 +187,9 @@ public class TreeSpawner : MonoBehaviour
             roots.Add(r);
             r.ID = rootCount;
             rootCount++;
-            if (r.lengthFromEnd == edgeCutt)
+            if (r.lengthFromEnd == 0)
             {
-                leavePositions.Add(r.pos);
+                leavePositions.Add(r.position);
             }
             maxBranches = maxBranches < r.root.Count ? r.root.Count : maxBranches;
             foreach (Root ro in r.root)
@@ -344,95 +202,116 @@ public class TreeSpawner : MonoBehaviour
             }
             else
             {
-                r.branchStrenght = (float)(r.lengthFromEnd + r.root[0].lengthFromEnd) / 2;
+                r.branchStrenght = 0;
             }
         };
         TreeTravel(root);
         MeshFilter mf = GetComponent<MeshFilter>();
         mesh = new Mesh();
         mf.mesh = mesh;
-        Vector3[] vertices = new Vector3[roots.Count * 2 + leavePositions.Count * 4];  //   2^(branchings+2)
-        Vector2[] uvs = new Vector2[roots.Count * 2 + leavePositions.Count * 4];    //UV1 is used for texture mapping
-        Vector2[] uvs2 = new Vector2[roots.Count * 2 + leavePositions.Count * 4];   //UV2 maps branch strenght for wind physics
-        Vector2[] uvs3 = new Vector2[roots.Count * 2 + leavePositions.Count * 4];   //UV3 maps leave textures
+        Vector3[] vertices = new Vector3[roots.Count * 3 + leavePositions.Count * 4];  //   2^(branchings+2)
+        Vector2[] uvs = new Vector2[roots.Count * 3 + leavePositions.Count * 4];    //UV1 is used for texture mapping
+        Vector2[] uvs2 = new Vector2[roots.Count * 3 + leavePositions.Count * 4];   //UV2 maps branch strenght for wind physics
+        Vector2[] uvs3 = new Vector2[roots.Count * 3 + leavePositions.Count * 4];   //UV3 maps leave textures
 
 
-        maxBranches *= 6;
+        maxBranches *= 9;
         int[] tri = Enumerable.Repeat(-1, maxBranches * roots.Count + leavePositions.Count * 6).ToArray();
         mesh.indexFormat = UnityEngine.Rendering.IndexFormat.UInt32;
         Parallel.For(0, roots.Count, (int i) =>
         {
-            Vector3 pos = roots[i].pos;
-            float rotation = roots[i].rotation + rotationOffset;
+            Vector3 pos = roots[i].position;
+            float rotation = roots[i].rotation;
 
             float uvLever = (float)roots[i].lengthFromEnd / (float)maxDepth;
-            uvs[roots[i].ID * 2] = new Vector2(0, 1.0f - uvLever);
-            uvs[roots[i].ID * 2 + 1] = new Vector2(0, 1.0f - uvLever);
+            uvs[roots[i].ID * 3] = new Vector2(0, 1.0f - uvLever);
+            uvs[roots[i].ID * 3 + 1] = new Vector2(0, 1.0f - uvLever);
+            uvs[roots[i].ID * 3 + 2] = new Vector2(0, 1.0f - uvLever);
 
             int depth = roots[i].lengthFromEnd == 0 ? 1 : 0;
 
-            vertices[roots[i].ID * 2] = pos + new
+            vertices[roots[i].ID * 3] = pos + new
             Vector3(Mathf.Cos(Mathf.Deg2Rad * (rotation - 90)),
             Mathf.Sin(Mathf.Deg2Rad * (rotation - 90)), -depth) * (uvLever + 0.02f) * branchWidth;
 
-            vertices[roots[i].ID * 2 + 1] = pos + new
+            vertices[roots[i].ID * 3 + 1] = pos + new
             Vector3(Mathf.Cos(Mathf.Deg2Rad * (rotation + 90)),
             Mathf.Sin(Mathf.Deg2Rad * (rotation + 90)), -depth) * (uvLever + 0.02f) * branchWidth;
 
+            vertices[roots[i].ID * 3 + 2] = pos + new
+            Vector3(Mathf.Cos(Mathf.Deg2Rad * rotation),
+            Mathf.Sin(Mathf.Deg2Rad * rotation), -depth) * (uvLever + 0.02f) * branchWidth;
+
             float branchStrenght = 1 - (float)roots[i].branchStrenght / (float)maxDepth;
-            uvs2[roots[i].ID * 2] = new Vector2(0, branchStrenght);
-            uvs2[roots[i].ID * 2 + 1] = new Vector2(0, branchStrenght);
+            if (roots[i].branchStrenght == 0) branchStrenght = 0;
+            uvs2[roots[i].ID * 3] = new Vector2(branchStrenght, branchStrenght);
+            uvs2[roots[i].ID * 3 + 1] = new Vector2(branchStrenght, branchStrenght);
+            uvs2[roots[i].ID * 3 + 2] = new Vector2(branchStrenght, branchStrenght);
 
-            uvs3[roots[i].ID * 2 + 1] = new Vector2(0, 0);
-            uvs3[roots[i].ID * 2 + 1] = new Vector2(0, 0);
+            uvs3[roots[i].ID * 3 + 0] = new Vector2(0, 0);
+            uvs3[roots[i].ID * 3 + 1] = new Vector2(0, 0);
+            uvs3[roots[i].ID * 3 + 2] = new Vector2(0, 0);
 
-            for (int first = 0; first < roots[i].root.Count; first++)
+            if (roots[i].root.Count == 2)
             {
-                int index = first * 6;
-                tri[roots[i].ID * maxBranches + index] = roots[i].ID * 2;
-                tri[roots[i].ID * maxBranches + index + 1] = roots[i].ID * 2 + 1;
-                tri[roots[i].ID * maxBranches + index + 2] = roots[i].root[first].ID * 2 + 1;
+                tri[roots[i].ID * 15 + 0] = roots[i].ID * 3 + 1;
+                tri[roots[i].ID * 15 + 1] = roots[i].ID * 3 + 2;
+                tri[roots[i].ID * 15 + 2] = roots[i].ID * 3 + 0;
 
-                tri[roots[i].ID * maxBranches + index + 3] = roots[i].ID * 2;
-                tri[roots[i].ID * maxBranches + index + 4] = roots[i].root[first].ID * 2 + 1;
-                tri[roots[i].ID * maxBranches + index + 5] = roots[i].root[first].ID * 2;
+                tri[roots[i].ID * 15 + 3] = roots[i].ID * 3;
+                tri[roots[i].ID * 15 + 4] = roots[i].ID * 3 + 2;
+                tri[roots[i].ID * 15 + 5] = roots[i].root[0].ID * 3 + 1;
+
+                tri[roots[i].ID * 15 + 6] = roots[i].ID * 3;
+                tri[roots[i].ID * 15 + 7] = roots[i].root[0].ID * 3 + 1;
+                tri[roots[i].ID * 15 + 8] = roots[i].root[0].ID * 3;
+
+                tri[roots[i].ID * 15 + 9] = roots[i].ID * 3 + 1;
+                tri[roots[i].ID * 15 + 10] = roots[i].root[1].ID * 3 + 1;
+                tri[roots[i].ID * 15 + 11] = roots[i].ID * 3 + 2;
+
+                tri[roots[i].ID * 15 + 12] = roots[i].ID * 3 + 2;
+                tri[roots[i].ID * 15 + 13] = roots[i].root[1].ID * 3 + 1;
+                tri[roots[i].ID * 15 + 14] = roots[i].root[1].ID * 3;
+            }
+            else if (roots[i].root.Count == 1)
+            {
+                tri[roots[i].ID * 15 + 0] = roots[i].ID * 3;
+                tri[roots[i].ID * 15 + 1] = roots[i].ID * 3 + 1;
+                tri[roots[i].ID * 15 + 2] = roots[i].root[0].ID * 3 + 1;
+
+                tri[roots[i].ID * 15 + 3] = roots[i].ID * 3;
+                tri[roots[i].ID * 15 + 4] = roots[i].root[0].ID * 3 + 1;
+                tri[roots[i].ID * 15 + 5] = roots[i].root[0].ID * 3 + 0;
             }
         });
-        float strength = 1 - (float)edgeCutt / (float)maxDepth;
         Parallel.For(0, leavePositions.Count, (int i) =>
         {
-            vertices[roots.Count * 2 + i * 4] = leavePositions[i] + new Vector3(leafSize * 0.5f, -leafSize * 0.5f, 0);
-            vertices[roots.Count * 2 + i * 4 + 1] = leavePositions[i] + new Vector3(-leafSize * 0.5f, -leafSize * 0.5f, 0);
-            vertices[roots.Count * 2 + i * 4 + 2] = leavePositions[i] + new Vector3(-leafSize * 0.5f, leafSize * 0.5f, 0);
-            vertices[roots.Count * 2 + i * 4 + 3] = leavePositions[i] + new Vector3(leafSize * 0.5f, leafSize * 0.5f, 0);
+            vertices[roots.Count * 3 + i * 4] = leavePositions[i] + new Vector3(leafSize * 0.5f, -leafSize * 0.5f, 0);
+            vertices[roots.Count * 3 + i * 4 + 1] = leavePositions[i] + new Vector3(-leafSize * 0.5f, -leafSize * 0.5f, 0);
+            vertices[roots.Count * 3 + i * 4 + 2] = leavePositions[i] + new Vector3(-leafSize * 0.5f, leafSize * 0.5f, 0);
+            vertices[roots.Count * 3 + i * 4 + 3] = leavePositions[i] + new Vector3(leafSize * 0.5f, leafSize * 0.5f, 0);
 
-            uvs2[roots.Count * 2 + i * 4] = new Vector2(strength, strength);
-            uvs2[roots.Count * 2 + i * 4 + 1] = new Vector2(strength, strength);
-            uvs2[roots.Count * 2 + i * 4 + 2] = new Vector2(strength, strength);
-            uvs2[roots.Count * 2 + i * 4 + 3] = new Vector2(strength, strength);
+            float strenght = 1 - 1 / (float)maxDepth;
+            uvs2[roots.Count * 3 + i * 4] = new Vector2(1, 1);
+            uvs2[roots.Count * 3 + i * 4 + 1] = new Vector2(1, 1);
+            uvs2[roots.Count * 3 + i * 4 + 2] = new Vector2(1, 1);
+            uvs2[roots.Count * 3 + i * 4 + 3] = new Vector2(1, 1);
 
-            uvs3[roots.Count * 2 + i * 4] = new Vector2(1, 0);
-            uvs3[roots.Count * 2 + i * 4 + 1] = new Vector2(0, 0);
-            uvs3[roots.Count * 2 + i * 4 + 2] = new Vector2(0, 1);
-            uvs3[roots.Count * 2 + i * 4 + 3] = new Vector2(1, 1);
+            uvs3[roots.Count * 3 + i * 4] = new Vector2(1, 0);
+            uvs3[roots.Count * 3 + i * 4 + 1] = new Vector2(0, 0);
+            uvs3[roots.Count * 3 + i * 4 + 2] = new Vector2(0, 1);
+            uvs3[roots.Count * 3 + i * 4 + 3] = new Vector2(1, 1);
 
 
-            tri[roots.Count * 6 + i * 6] = roots.Count * 2 + i * 4;
-            tri[roots.Count * 6 + i * 6 + 1] = roots.Count * 2 + i * 4 + 1;
-            tri[roots.Count * 6 + i * 6 + 2] = roots.Count * 2 + i * 4 + 2;
+            tri[roots.Count * 15 + i * 6] = roots.Count * 3 + i * 4;
+            tri[roots.Count * 15 + i * 6 + 1] = roots.Count * 3 + i * 4 + 1;
+            tri[roots.Count * 15 + i * 6 + 2] = roots.Count * 3 + i * 4 + 2;
 
-            tri[roots.Count * 6 + i * 6 + 3] = roots.Count * 2 + i * 4;
-            tri[roots.Count * 6 + i * 6 + 4] = roots.Count * 2 + i * 4 + 2;
-            tri[roots.Count * 6 + i * 6 + 5] = roots.Count * 2 + i * 4 + 3;
+            tri[roots.Count * 15 + i * 6 + 3] = roots.Count * 3 + i * 4;
+            tri[roots.Count * 15 + i * 6 + 4] = roots.Count * 3 + i * 4 + 2;
+            tri[roots.Count * 15 + i * 6 + 5] = roots.Count * 3 + i * 4 + 3;
         });
-        //foreach (Vector3 pos in leavePositions)
-        //{
-        //    Vector3 p = pos;
-        //    p.z = transform.position.z;
-        //    GameObject g = Instantiate(gObject);
-        //    g.transform.position = p;
-        //    g.transform.Rotate(new Vector3(0, 0, UnityEngine.Random.Range(0, 360)));
-        //}
         Debug.Log(vertices.Count());
         tri = tri.Where(x => x > -1).ToArray();
         mesh.vertices = vertices;

@@ -32,17 +32,10 @@ Shader "Tree" {
 			  l.leafuv = v.texcoord3;
 			  appdata o;
 			  o.uv2 = float4(v.texcoord1.xy, 0, 0);
-			  float f = tex2Dlod(_Noise, float4(worldPos.xy / 100, 0, 0)).r * 100;
-			  v.vertex.x += cos(_Time.z*1.2)*o.uv2.y*0.1f;
-			  v.vertex.y += sin(_Time.z*1.9)*o.uv2.y*0.05f;
+			  float f = tex2Dlod(_Noise, float4(abs(worldPos.xy % 1), 0,0)).r * 100;
 
-
-
-			  if (o.uv2.y > .95f) {
-				//float3 worldPos = mul(unity_ObjectToWorld, v.vertex).xyz;
-				//v.vertex.x += cos(_Time.z * 10 + worldPos.x + worldPos.y)*o.uv2.y*0.01f;
-				//v.vertex.y += cos(_Time.z * 6 + worldPos.x + worldPos.y)*o.uv2.y*0.005f;
-			  }
+			  v.vertex.x += cos(_Time.z*.3)*o.uv2.y*0.3f;
+			  v.vertex.y += sin(_Time.z*.5)*o.uv2.y*0.1f;
 		  }
 
 
@@ -52,9 +45,6 @@ Shader "Tree" {
 			  o.Emission = c.rgb.rgb;
 			  o.Alpha = 1;
 			  if (IN.leafuv.x > 0) {
-				  /*c = tex2D(_LeafTex, IN.leafuv);
-				  o.Albedo = (c.rgb  * c.a);
-				  o.Emission = c.rgb.rgb;*/
 				  o.Alpha = 0;
 			  }
 		  }

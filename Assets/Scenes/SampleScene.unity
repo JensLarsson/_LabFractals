@@ -293,13 +293,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fe3a4da93db044d49844ef776706f9d7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  modelChoice: 1
-  StartHeight: 0.15
+  flipBranches: 1
+  StartHeight: 4
+  heightMultiplier: 0.8
+  leftRotation: 45
+  rightRotation: 5
   branchWidth: 0.25
-  rotationOffset: 0
   Branchings: 5
-  cleanupFactor: 82
-  edgeCutt: 4
   leafSize: 0.85
 --- !u!4 &1586038564
 Transform:

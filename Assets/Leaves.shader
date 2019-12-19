@@ -28,20 +28,21 @@
 
 
 		  void vert(inout appdata_full v, out Input l) {
-			  float3 worldPos = mul(unity_ObjectToWorld, v.vertex).xyz;
+			  float3 worldPos = mul(unity_ObjectToWorld, float4(v.vertex.xyz, 1)).xyz;
 			  UNITY_INITIALIZE_OUTPUT(Input, l);
 			  l.leafuv = v.texcoord3;
 			  appdata o;
 			  o.uv2 = float4(v.texcoord1.xy, 0, 0);
-			  float f = tex2Dlod(_Noise, float4(worldPos.xy / 100, 0,0)).r * 100;
+			  float f = tex2Dlod(_Noise, float4(abs(worldPos.xy % 1), 0,0)).r * 100;
 
-			  v.vertex.x += cos(f + _Time.z*1.2)*o.uv2.y*0.1f;
-			  v.vertex.y += sin(f + _Time.z*1.9)*o.uv2.y*0.05f;
+			  if (o.uv2.y > .95f) {
 
-			  //if (o.uv2.y > .95f) {
-				//v.vertex.x += cos(tex2Dlod(_Noise, float4((f+_Time.y) % 1, (f+_Time.y) % 1, 0, 0)))*.1;
-				//v.vertex.y += cos(tex2Dlod(_Noise, float4((f+_Time.y) % 1, (f+_Time.y) % 1, 0, 0)))*.1;
-			  //}
+				  v.vertex.x += cos(_Time.z*.3)*o.uv2.y*0.3f;
+				  v.vertex.y += sin(_Time.z*.5)*o.uv2.y*0.1f;
+
+				  v.vertex.x += cos(f + _Time.z*.3)*o.uv2.y*0.1f;
+				  v.vertex.y += sin(f + _Time.z*.5)*o.uv2.y*0.05f;
+			  }
 		  }
 
 
